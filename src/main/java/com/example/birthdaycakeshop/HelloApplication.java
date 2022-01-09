@@ -12,11 +12,11 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class HelloApplication extends Application {
 
@@ -34,11 +34,11 @@ public class HelloApplication extends Application {
 
         var cakeOptionsContainer = new BorderPane();
         var cakeOptionsButtonContainer = new HBox();
+        cakeOptionsButtonContainer.setSpacing(10);
         Button addCakeButton = new Button("Add a new cake");
-        Button addButton = new Button("Clear");
-        cakeOptionsButtonContainer.getChildren().addAll(addCakeButton, addButton);
-        var cakeOptionsRadioContainer = new VBox();
-//        var cake
+        Button clearButton = new Button("Clear");
+
+        cakeOptionsButtonContainer.getChildren().addAll(addCakeButton, clearButton);
         cakeOptionsContainer.setTop(cakeOptionsButtonContainer);
         grid.add(cakeOptionsContainer, 2, 2, 1, 1);
 
@@ -50,16 +50,48 @@ public class HelloApplication extends Application {
         Label filling = new Label("Choose the filling: ");
         grid.add(filling, 2, 0, 3, 17 );
         String fillings[] = { "Chocolate", "Vanilla", "Strawberries" };
-        addCheckboxes(grid, fillings, 6);
+        RadioButtonGroup radioButtonGroup1 = addRadioButtons(grid, 5, 3, fillings, 6);
 
         Label glaze = new Label("and the glaze: ");
         grid.add(glaze, 2, 0, 3, 27);
 
         String glazes[] = { "Chocolate", "Vanilla", "Strawberries" };
-        addRadioButtons(grid, glazes, 10);
+        RadioButtonGroup radioButtonGroup2 = addRadioButtons(grid, 7, 3, glazes, 10);
+
+        clearButton.setOnMouseClicked((event) -> {
+            radioButtonGroup1.buttons.forEach(btn -> btn.setSelected(false));
+            radioButtonGroup2.buttons.forEach(btn -> btn.setSelected(false));
+        });
+
+        var currentCakes = new ArrayList<BirthdayCake>();
+        AtomicInteger currentCakesCount = new AtomicInteger();
+
+        addCakeButton.setOnMouseClicked((event) -> {
+            var activeFilling = radioButtonGroup1.buttons.stream()
+                    .filter(ToggleButton::isSelected)
+                    .findFirst()
+                    .get()
+                    .getText();
+
+            var activeGlaze = radioButtonGroup2.buttons.stream()
+                    .filter(ToggleButton::isSelected)
+                    .findFirst()
+                    .get()
+                    .getText();
+
+            currentCakes.add(new BirthdayCake(currentCakesCount.incrementAndGet(), activeFilling, activeGlaze, 20.0));
+
+            radioButtonGroup1.buttons.forEach(btn -> btn.setSelected(false));
+            radioButtonGroup2.buttons.forEach(btn -> btn.setSelected(false));
+        });
 
         //Option 2:
         Button addO = new Button("Add Order");
+        addO.setOnMouseClicked((EventHandler<? super MouseEvent>) handler -> {
+             _orderService.add(new Order(0, currentCakes, LocalDate.now().plusDays(2)));
+//            System.out.println(currentCakes);
+            currentCakes.clear();
+        });
         grid.add(addO, 2, 0, 10, 40);
 
         //Option 3:
@@ -70,6 +102,7 @@ public class HelloApplication extends Application {
         Button deleteOrder = new Button("Cancel Order");
         deleteOrder.setOnMouseClicked((EventHandler<? super MouseEvent>) handler -> {
             _orderService.remove(Integer.parseInt(idToBeRemoved.getText()));
+            idToBeRemoved.clear();
         });
         grid.add(deleteOrder, 2, 0, 10, 60);
 
@@ -95,28 +128,18 @@ public class HelloApplication extends Application {
         stage.show();
     }
 
-    void addCheckboxes(GridPane gpane, String[] strings, int colums) {
-        int row = 5, col = 3;
-
-        var toggleGroup = new ToggleGroup();
+    RadioButtonGroup addRadioButtons(GridPane gpane, int startingRow, int startingCol, String[] strings, int colums) {
+        RadioButtonGroup radioButtonGroup = new RadioButtonGroup(new ToggleGroup(), new ArrayList<RadioButton>());
 
         for(String s: strings){
             var radioButton = new RadioButton(s);
-            radioButton.setToggleGroup(toggleGroup);
-            gpane.add(radioButton, col, row);
-            col = ++col % colums;
-            row = col == 0 ? ++row : row;
+            radioButton.setToggleGroup(radioButtonGroup.getToggleGroup());
+            gpane.add(radioButton, startingCol, startingRow);
+            radioButtonGroup.buttons.add(radioButton);
+            startingCol = ++startingCol % colums;
+            startingRow = startingCol == 0 ? ++startingRow : startingRow;
         }
-    }
-
-    void addRadioButtons(GridPane gpane, String[] strings, int colums) {
-        int row = 7, col = 3;
-
-        for(String s: strings){
-            gpane.add(new RadioButton(s), col, row);
-            col = ++col % colums;
-            row = col == 0 ? ++row : row;
-        }
+        return radioButtonGroup;
     }
 
     public static void main(String[] args) { launch(); }
