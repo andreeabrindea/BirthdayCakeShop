@@ -28,8 +28,8 @@ public class HelloApplication extends Application {
 
         GridPane grid = new GridPane();
         grid.setStyle("-fx-background-color: #FFE5B4;");
-        grid.setHgap(5); //horizontal gap in pixels => that's what you are asking for
-        grid.setVgap(5); //vertical gap in pixels
+        grid.setHgap(5);
+        grid.setVgap(5);
         grid.setPadding(new Insets(5, 5, 5, 5));
 
         var cakeOptionsContainer = new BorderPane();
